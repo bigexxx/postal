@@ -2,6 +2,18 @@
 
 This file contains all the latest changes and updates to Postal.
 
+## [3.4.0](https://github.com/bigexxx/postal/compare/3.3.7...3.4.0) (2026-07-28)
+
+
+### Features
+
+* **tracking:** replace persisted tracking links with stateless signed URLs ([0c1d624](https://github.com/bigexxx/postal/commit/0c1d624))
+
+
+### Miscellaneous Chores
+
+* **ci:** publish images to the `bigexxx` GHCR namespace without release pull requests
+
 ## [3.3.7](https://github.com/postalserver/postal/compare/3.3.6...3.3.7) (2026-06-03)
 
 
