@@ -41,6 +41,72 @@ RSpec.describe TrackingMiddleware do
     end
   end
 
+  describe "GET /c/v1/:server_token/:message_token/:link_token/:url/:signature (signed click tracking)" do
+    let(:destination_url) { "https://example.com/path?q=one&next=%2Ftwo#result" }
+    let(:tracking_path) do
+      Postal::TrackingUrl.generate(
+        server_token: server.token,
+        message_token: message.token,
+        url: destination_url
+      )
+    end
+
+    it "records the click and redirects to the signed destination" do
+      allow(WebhookRequest).to receive(:trigger)
+
+      get "/c/#{tracking_path}", {}, track_headers
+
+      expect(last_response.status).to eq 307
+      expect(last_response.headers["Location"]).to eq destination_url
+
+      reloaded = server.message_db.message(message.id)
+      expect(reloaded.clicks.size).to eq 1
+      expect(reloaded.clicks.first.url).to eq destination_url
+      expect(reloaded.clicked).not_to be_nil
+      expect(WebhookRequest).to have_received(:trigger).with(
+        server,
+        "MessageLinkClicked",
+        hash_including(url: destination_url, token: tracking_path.split("/")[-3])
+      )
+    end
+
+    it "rejects a tampered destination without recording a click" do
+      parts = tracking_path.split("/")
+      parts[-2] = "#{parts[-2][0...-1]}#{parts[-2][-1] == 'A' ? 'B' : 'A'}"
+
+      get "/c/#{parts.join('/')}", {}, track_headers
+
+      expect(last_response.status).to eq 404
+      expect(last_response.headers["Location"]).to be_nil
+      expect(server.message_db.message(message.id).clicks).to be_empty
+    end
+
+    it "still redirects when the associated message has been removed" do
+      removed_message_path = Postal::TrackingUrl.generate(
+        server_token: server.token,
+        message_token: "removed-message",
+        url: destination_url
+      )
+
+      get "/c/#{removed_message_path}", {}, track_headers
+
+      expect(last_response.status).to eq 307
+      expect(last_response.headers["Location"]).to eq destination_url
+    end
+  end
+
+  describe "GET /:server_token/:link_token (legacy click tracking)" do
+    it "continues to resolve links generated before stateless tracking" do
+      destination_url = "https://example.com/legacy"
+      link_token = message.create_link(destination_url)
+
+      get "/#{server.token}/#{link_token}", {}, track_headers
+
+      expect(last_response.status).to eq 307
+      expect(last_response.headers["Location"]).to eq destination_url
+    end
+  end
+
   describe "GET /img/:server_token/:message_token?src=<url> (image proxy)" do
     let(:attacker_url) { "http://internal.example.com/secret" }
 

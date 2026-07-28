@@ -21,5 +21,6 @@ describe Postal::MessageParser do
     expect(parser.actioned?).to be true
     expect(parser.new_body).to match(/^Hello world! https:\/\/click\.#{message.domain.name}/)
     expect(parser.tracked_links).to eq 1
+    expect(server.message_db.select(:links)).to be_empty
   end
 end

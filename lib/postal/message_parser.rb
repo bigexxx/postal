@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "postal/tracking_url"
+
 module Postal
   class MessageParser
 
@@ -106,8 +108,7 @@ module Postal
               theend = url.size - 2
               url = url[0..theend]
             end
-            token = @message.create_link(url)
-            "#{domain}/#{@message.server.token}/#{token}"
+            "#{domain}/c/#{tracking_url(url)}"
           else
             ::Regexp.last_match(0)
           end
@@ -119,8 +120,7 @@ module Postal
           if track_domain?($~[:domain])
             @tracked_links += 1
             url = CGI.unescapeHTML($~[:url])
-            token = @message.create_link(url)
-            "href='#{domain}/#{@message.server.token}/#{token}'"
+            "href='#{domain}/c/#{tracking_url(url)}'"
           else
             ::Regexp.last_match(0)
           end
@@ -151,6 +151,14 @@ module Postal
 
     def track_domain?(domain)
       !@domain.excluded_click_domains_array.include?(domain)
+    end
+
+    def tracking_url(url)
+      Postal::TrackingUrl.generate(
+        server_token: @message.server.token,
+        message_token: @message.token,
+        url: url
+      )
     end
 
   end

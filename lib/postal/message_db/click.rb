@@ -4,8 +4,8 @@ module Postal
   module MessageDB
     class Click
 
-      def initialize(attributes, link)
-        @url = link["url"]
+      def initialize(attributes, link = nil)
+        @url = attributes["url"] || link&.[]("url")
         @ip_address = attributes["ip_address"]
         @user_agent = attributes["user_agent"]
         @timestamp = Time.zone.at(attributes["timestamp"])

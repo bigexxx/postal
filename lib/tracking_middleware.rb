@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "postal/tracking_url"
+
 class TrackingMiddleware
 
   TRACKING_PIXEL = File.read(Rails.root.join("app", "assets", "images", "tracking_pixel.png"))
@@ -20,6 +22,14 @@ class TrackingMiddleware
       server_token = ::Regexp.last_match(1)
       message_token = ::Regexp.last_match(2)
       dispatch_image_request(request, server_token, message_token)
+    when /\A\/c\/v1\/([a-z0-9-]+)\/([a-z0-9-]+)\/([a-z0-9-]+)\/([a-z0-9_-]+)\/([a-z0-9_-]+)\z/i
+      server_token = ::Regexp.last_match(1)
+      message_token = ::Regexp.last_match(2)
+      link_token = ::Regexp.last_match(3)
+      encoded_url = ::Regexp.last_match(4)
+      signature = ::Regexp.last_match(5)
+      tracking_url = { server_token: server_token, message_token: message_token, link_token: link_token, encoded_url: encoded_url, signature: signature }
+      dispatch_signed_redirect_request(request, tracking_url)
     when /\A\/([a-z0-9-]+)\/([a-z0-9-]+)/i
       server_token = ::Regexp.last_match(1)
       link_token = ::Regexp.last_match(2)
@@ -96,6 +106,43 @@ class TrackingMiddleware
     end
 
     [307, { "Location" => link["url"] }, ["Redirected to: #{link['url']}"]]
+  end
+
+  def dispatch_signed_redirect_request(request, tracking_url)
+    url = Postal::TrackingUrl.verify(**tracking_url)
+    return [404, {}, ["Invalid tracking URL"]] unless url
+
+    message_db = get_message_db_from_server_token(tracking_url[:server_token])
+    return [404, {}, ["Invalid Server Token"]] unless message_db
+
+    begin
+      message = message_db.message(token: tracking_url[:message_token])
+      create_click(message_db, message, request, url, tracking_url[:link_token])
+    rescue Postal::MessageDB::Message::NotFound
+      # The URL is signed and safe to redirect to even if its message has been removed.
+    end
+
+    [307, { "Location" => url }, ["Redirected to: #{url}"]]
+  end
+
+  def create_click(message_db, message, request, url, token)
+    time = Time.now.to_f
+    message_db.update(:messages, { clicked: time }, where: { id: message.id })
+    message_db.insert(:clicks, {
+      message_id: message.id,
+      url: url,
+      ip_address: request.ip,
+      user_agent: request.user_agent,
+      timestamp: time
+    })
+
+    WebhookRequest.trigger(message_db.server, "MessageLinkClicked", {
+      message: message.webhook_hash,
+      url: url,
+      token: token,
+      ip_address: request.ip,
+      user_agent: request.user_agent
+    })
   end
 
   def get_message_db_from_server_token(token)

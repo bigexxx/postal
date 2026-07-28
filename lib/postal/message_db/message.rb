@@ -151,9 +151,14 @@ module Postal
           if clicks.empty?
             []
           else
-            links = @database.select("links", where: { id: clicks.map { |c| c["link_id"].to_i } }).group_by { |l| l["id"] }
+            link_ids = clicks.filter_map { |click| click["link_id"]&.to_i }.uniq
+            links = if link_ids.empty?
+                      {}
+                    else
+                      @database.select("links", where: { id: link_ids }).index_by { |link| link["id"].to_i }
+                    end
             clicks.map do |hash|
-              Click.new(hash, links[hash["link_id"]].first)
+              Click.new(hash, links[hash["link_id"]&.to_i])
             end
           end
         end
