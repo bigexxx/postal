@@ -138,6 +138,7 @@ module Postal
       # to manipulate the results.
       #
       #   :where     => A hash containing the query
+      #   :where_any => A hash containing alternative conditions joined with OR
       #   :order     => The name of a field to order by
       #   :direction => The order that should be applied to ordering (ASC or DESC)
       #   :fields    => An array of fields to select
@@ -156,8 +157,11 @@ module Postal
           sql_query << " *"
         end
         sql_query << " FROM #{escape_identifier(database_name)}.#{escape_identifier(table)}"
-        if options[:where].present?
-          sql_query << (" " + build_where_string(options[:where], " AND "))
+        conditions = []
+        conditions << hash_to_sql(options[:where], " AND ") if options[:where].present?
+        conditions << "(#{hash_to_sql(options[:where_any], ' OR ')})" if options[:where_any].present?
+        if conditions.any?
+          sql_query << " WHERE #{conditions.join(' AND ')}"
         end
         if options[:order]
           direction = (options[:direction] || "ASC").upcase
