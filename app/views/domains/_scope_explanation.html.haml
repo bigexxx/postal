@@ -1,0 +1,17 @@
+.domainScope.u-margin
+  - if @server
+    %h2.domainScope__title Mail server domains are private to this server
+    %p.domainScope__text
+      Domains added here can only be used by <strong>#{@server.name}</strong>. Add a domain at this level when this mail server needs its own isolated DKIM key and DNS configuration.
+    %p.domainScope__text
+      Domains listed under #{link_to "Organization → Domains", organization_domains_path(organization), :class => "u-link"} are already available to this mail server. You do not need to add them again here.
+    %p.domainScope__warning
+      If the same verified domain exists at both levels, this mail server's domain takes priority. Only create that duplicate intentionally.
+  - else
+    %h2.domainScope__title Organization domains are shared
+    %p.domainScope__text
+      Domains added here can be used by <strong>every mail server in #{@organization.name}</strong> for sending, routing, and tracking-domain configuration.
+    %p.domainScope__text
+      Add a domain here when multiple mail servers should share it. For a domain that belongs to only one mail server, add it from that mail server's <strong>Domains</strong> page instead.
+    %p.domainScope__warning
+      Do not add the same domain at both levels unless you intentionally need separate DKIM and DNS settings. A mail server-level copy takes priority on that server.

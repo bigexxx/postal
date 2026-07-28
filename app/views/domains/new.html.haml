@@ -16,6 +16,8 @@
   = render 'organizations/nav', :active_nav => :domains
 
 .pageContent.pageContent--compact
+  = render "scope_explanation"
+
   = form_for [organization, @server, @domain], :remote => true do |f|
     = f.error_messages
     %fieldset.fieldSet

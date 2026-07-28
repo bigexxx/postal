@@ -17,6 +17,8 @@
 
 .pageContent.pageContent--compact
 
+  = render "scope_explanation"
+
   - if @domains.empty?
     .noData.noData--clean
       %h2.noData__title There are no domains for this server.

@@ -1,0 +1,31 @@
+.domainScope {
+  background:$lightBlue;
+  border-left:4px solid $blue;
+  border-radius:4px;
+  padding:18px 20px;
+}
+
+.domainScope__title {
+  color:$darkBlue;
+  font-size:17px;
+  font-weight:600;
+  margin-bottom:8px;
+}
+
+.domainScope__text {
+  color:$darkBlue;
+  line-height:1.5;
+}
+
+.domainScope__text + .domainScope__text {
+  margin-top:8px;
+}
+
+.domainScope__warning {
+  border-top:1px solid darken($lightBlue, 8%);
+  color:$orange;
+  font-weight:600;
+  line-height:1.5;
+  margin-top:12px;
+  padding-top:12px;
+}
