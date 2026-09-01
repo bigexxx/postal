@@ -8,11 +8,11 @@ RSpec.describe TidyQueuedMessagesTask do
   subject(:task) { described_class.new(logger: logger) }
 
   describe "#call" do
-    it "destroys queued messages with stale locks" do
+    it "unlocks queued messages with stale locks" do
       stale_message = create(:queued_message, locked_at: 2.days.ago, locked_by: "test")
       task.call
-      expect { stale_message.reload }.to raise_error(ActiveRecord::RecordNotFound)
-      expect(logger).to have_logged(/removing queued message \d+/)
+      expect(stale_message.reload).to_not be_locked
+      expect(logger).to have_logged(/unlocking queued message \d+/)
     end
 
     it "does not destroy messages which are not locked" do
