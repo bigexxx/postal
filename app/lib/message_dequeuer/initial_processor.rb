@@ -22,6 +22,11 @@ module MessageDequeuer
             process_message(@queued_message)
             @other_messages&.each { |message| process_message(message) }
           end
+        rescue StandardError
+          [@queued_message, *@other_messages.to_a].each do |message|
+            message.unlock if message.persisted? && message.locked?
+          end
+          raise
         ensure
           @state.finished
         end

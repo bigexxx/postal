@@ -5,8 +5,8 @@ class TidyQueuedMessagesTask < ApplicationScheduledTask
   def call
     QueuedMessage.with_stale_lock.in_batches do |messages|
       messages.each do |message|
-        logger.info "removing queued message #{message.id} (locked at #{message.locked_at} by #{message.locked_by})"
-        message.destroy
+        logger.info "unlocking queued message #{message.id} (locked at #{message.locked_at} by #{message.locked_by})"
+        message.unlock
       end
     end
   end

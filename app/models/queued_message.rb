@@ -37,7 +37,12 @@ class QueuedMessage < ApplicationRecord
   before_create :allocate_ip_address
 
   scope :ready_with_delayed_retry, -> { where("retry_after IS NULL OR retry_after < ?", 30.seconds.ago) }
-  scope :with_stale_lock, -> { where("locked_at IS NOT NULL AND locked_at < ?", Postal::Config.postal.queued_message_lock_stale_days.days.ago) }
+  scope :with_stale_lock, lambda {
+    stale_after = Postal::Config.postal.queued_message_lock_stale_minutes&.minutes ||
+                  Postal::Config.postal.queued_message_lock_stale_days.days
+
+    where("locked_at IS NOT NULL AND locked_at < ?", stale_after.ago)
+  }
 
   def retry_now
     update!(retry_after: nil)

@@ -13,20 +13,17 @@ module Postal
 
       def use
         retried = false
-        do_not_checkin = false
+        connection = nil
         begin
-          connection = checkout
+          connection = retried ? establish_connection : checkout
 
           yield connection
         rescue Mysql2::Error => e
           if e.message =~ /(lost connection|gone away|not connected)/i
-            # If the connection has failed for a connectivity reason
-            # we won't add it back in to the pool so that it'll reconnect
-            # next time.
-            do_not_checkin = true
+            connection.close if connection && !connection.closed?
+            connection = nil
 
-            # If we haven't retried yet, we'll retry the block once more.
-            if retried == false
+            unless retried
               retried = true
               retry
             end
@@ -34,7 +31,7 @@ module Postal
 
           raise
         ensure
-          checkin(connection) unless do_not_checkin
+          checkin(connection) if connection
         end
       end
 

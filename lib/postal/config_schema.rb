@@ -101,8 +101,12 @@ module Postal
       end
 
       integer :queued_message_lock_stale_days do
-        description "The number of days after which to consider a lock as stale. Messages with stale locks will be removed and not retried."
+        description "The number of days after which to consider a lock as stale when queued_message_lock_stale_minutes is not configured"
         default 1
+      end
+
+      integer :queued_message_lock_stale_minutes do
+        description "The number of minutes after which to consider a queued message lock as stale"
       end
 
       boolean :batch_queued_messages do

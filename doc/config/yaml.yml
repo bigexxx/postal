@@ -31,8 +31,10 @@ postal:
   trusted_proxies: []
   # Hostnames or IP/CIDR ranges that outbound webhook and HTTP endpoint requests are permitted to reach even when they resolve to a private, loopback, link-local or otherwise reserved address. All other such destinations are blocked to prevent SSRF.
   allowed_request_destinations: []
-  # The number of days after which to consider a lock as stale. Messages with stale locks will be removed and not retried.
+  # The number of days after which to consider a lock as stale when queued_message_lock_stale_minutes is not configured
   queued_message_lock_stale_days: 1
+  # The number of minutes after which to consider a queued message lock as stale
+  queued_message_lock_stale_minutes:
   # When enabled queued messages will be de-queued in batches based on their destination
   batch_queued_messages: true
 
