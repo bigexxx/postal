@@ -81,6 +81,8 @@ module Postal
           {
             host: uri.host,
             port: uri.port || 25,
+            username: uri.user && URI::DEFAULT_PARSER.unescape(uri.user),
+            password: uri.password && URI::DEFAULT_PARSER.unescape(uri.password),
             ssl_mode: query["ssl_mode"]&.first || "Auto"
           }
         end

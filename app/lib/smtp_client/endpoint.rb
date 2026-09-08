@@ -52,6 +52,15 @@ module SMTPClient
     #
     # @return [Net::SMTP]
     def start_smtp_session(source_ip_address: nil, allow_ssl: true)
+      if @server.username || @server.password
+        if @server.username.to_s.empty? || @server.password.to_s.empty?
+          raise ArgumentError, "SMTP relay authentication requires both username and password"
+        end
+        unless allow_ssl && [SSLModes::STARTTLS, SSLModes::TLS].include?(@server.ssl_mode)
+          raise ArgumentError, "SMTP relay authentication requires STARTLS or TLS with certificate verification"
+        end
+      end
+
       @smtp_client = Net::SMTP.new(@ip_address, @server.port)
       @smtp_client.open_timeout = Postal::Config.smtp_client.open_timeout
       @smtp_client.read_timeout = Postal::Config.smtp_client.read_timeout
@@ -83,6 +92,9 @@ module SMTPClient
       end
 
       @smtp_client.start(@source_ip_address ? @source_ip_address.hostname : self.class.default_helo_hostname)
+      if @server.username
+        @smtp_client.authenticate(@server.username, @server.password, :login)
+      end
 
       @smtp_client
     end
